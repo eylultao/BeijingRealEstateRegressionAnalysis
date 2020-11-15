@@ -44,10 +44,12 @@ cor(training_set$totalPrice, training_set$price)
 # it wouldn't make sense to calculate pearson correlation between a categorical variable that looks like an "integer" with a continuous var such as totalPrice
 # But I was curious and made a plot to see how house prices differ across districts in Beijing
 plot(training_set$totalPrice, training_set$district)
+# additional plots for other categorical variables
+plot(training_set$totalPrice, training_set$buildingType)
+plot(training_set$totalPrice, training_set$buildingStructure)
 
 # correlation matrices
 corrs_wrt_totalPrice <- cor(select_if(training_set, is.numeric), training_set$totalPrice) 
 corrs_all <- cor(select_if(training_set, is.numeric)) # correlation between all variables
 
 # 
-
