@@ -3,6 +3,7 @@ getwd()
 library("dplyr")
 
 # PART1: Data cleaning and general preparation
+# data source: https://www.kaggle.com/ruiqurm/lianjia
 #data <- read.csv("new.csv", header = TRUE, fileEncoding="latin1") # had to typeset encoding to eliminate type convert error
 # data simple has DOM removed from it, as the majority of DOM values are na, which reduces dataset size enormously( cuts N in half)
 data_simple <- read.csv("new copy.csv", header = TRUE, fileEncoding="latin1") # had to typeset encoding to eliminate type convert error 
