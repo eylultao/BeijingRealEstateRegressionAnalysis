@@ -75,6 +75,8 @@ p2 + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=communi
   theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
   ggtitle("Distribution of Mean Community Score Across Districts")
 # the bar plot is very similar to the housing prices
+# potential multicollinearity problem, will need to be adressed
+# TODO: find a better way to explore collinearity
 
 # TODO : how are building types distributed across districts? 
 building_type_by_district <- aggregate(training_set[, 11:11 ], list(training_set$district), )
