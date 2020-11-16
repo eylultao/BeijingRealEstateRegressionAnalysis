@@ -1,4 +1,4 @@
-setwd("/Users/eylulaygun/Desktop/Year\ 5/STAT\ 306/Group\ project" )
+setwd("/Users/eylulaygun/Desktop/Year\ 5/STAT\ 306/Group\ project/BeijingRealEstateRegressionAnalysis" )
 getwd()
 library("dplyr")
 
@@ -48,8 +48,50 @@ plot(training_set$totalPrice, training_set$district)
 plot(training_set$totalPrice, training_set$buildingType)
 plot(training_set$totalPrice, training_set$buildingStructure)
 
+plot(training_set$totalPrice, training_set$communityAverage)
+
 # correlation matrices
 corrs_wrt_totalPrice <- cor(select_if(training_set, is.numeric), training_set$totalPrice) 
 corrs_all <- cor(select_if(training_set, is.numeric)) # correlation between all variables
 
 # 
+# DATA VISUALIZATION
+library(ggplot2)
+library(data.table) #useful library for doing fast operations on large datasets
+# trying to understand the most expensive neighborhoods
+mean_price_by_district <- aggregate(training_set[, 4:4 ], list(training_set$district), mean)
+mean_price_by_district <- data.frame(district_number = mean_price_by_district$Group.1, mean_price = round( mean_price_by_district$x))
+p <- ggplot(data = mean_price_by_district, aes(x = district_number, y = mean_price)) 
+p + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=mean_price), vjust=1.5, color="white", size=3.5) +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) +
+  ggtitle("Distribution of Mean House Price Across Districts")
+
+# How is community score changing across districts
+mean_community_score_by_district <- aggregate(training_set[, 19:19 ], list(training_set$district), mean)
+mean_community_score_by_district <- data.frame(district_number = mean_community_score_by_district$Group.1, community_avg = round( mean_community_score_by_district$x))
+
+p2 <- ggplot(data = mean_community_score_by_district, aes(x = district_number, y = community_avg)) 
+p2 + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=community_avg), vjust=1.5, color="white", size=3.5) +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  ggtitle("Distribution of Mean Community Score Across Districts")
+# the bar plot is very similar to the housing prices
+
+# TODO : how are building types distributed across districts? 
+building_type_by_district <- aggregate(training_set[, 11:11 ], list(training_set$district), )
+
+
+# BASIC LINEAR MODELS
+training_set$district <- relevel(training_set$district, ref = 13) # use the cheapest district as baseline
+model_basic1 <- lm(totalPrice ~ square + district, data = training_set)
+summary(model1)
+
+training_set$district <- relevel(training_set$district, ref = 13) # use the cheapest district as baseline
+# where is bedroom?? 
+model_basic2 <- lm(totalPrice ~ square + district + bathRoom + drawingRoom + livingRoom + subway+ communityAverage, data = training_set)
+summary(model_basic2)
+
+# TODO: model selection methods (either backwards or forwards, do we need to implement ourselves?)
+# to try:
+# - stepwise model selection 
+# - using anova in case stepwise is not accepted
+# - 
