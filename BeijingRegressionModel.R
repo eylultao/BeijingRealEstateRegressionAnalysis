@@ -11,10 +11,11 @@ str(data_simple) # sanity check
 # remove NA values
 data_simple <- na.omit( data.frame(data_simple)) 
 # some columns are char when they have to be integers (eg. livingRoom, drawingRoom, etc)
-data_simple$livingRoom <- as.numeric(data_simple$livingRoom)
+# livingroom is actually the bedroom, and drawingroom is actually the living room
+data_simple$bedRoom <- as.numeric(data_simple$livingRoom)
+data_simple$livingRoom <- as.numeric(data_simple$drawingRoom)
 data_simple$bathRoom <- as.numeric(data_simple$bathRoom)
 data_simple$constructionTime <- as.numeric(data_simple$constructionTime)
-data_simple$drawingRoom <- as.numeric(data_simple$drawingRoom)
 # typecast categorical variables as factors
 data_simple$district <- as.factor(data_simple$district)
 data_simple$buildingType <- as.factor(data_simple$buildingType)
@@ -22,6 +23,7 @@ data_simple$buildingStructure <- as.factor(data_simple$buildingStructure)
 # typeset tradeTime to Date Type
 data_simple$tradeTime <- as.Date(data_simple$tradeTime)
 data_simple$totalPriceLog <- log(data_simple$totalPrice* 10000)
+
 
 str(data_simple)
 
