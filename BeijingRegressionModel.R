@@ -21,6 +21,7 @@ data_simple$buildingType <- as.factor(data_simple$buildingType)
 data_simple$buildingStructure <- as.factor(data_simple$buildingStructure)
 # typeset tradeTime to Date Type
 data_simple$tradeTime <- as.Date(data_simple$tradeTime)
+data_simple$totalPriceLog <- log(data_simple$totalPrice* 10000)
 
 str(data_simple)
 
@@ -81,6 +82,13 @@ p2 + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=communi
 
 # TODO : how are building types distributed across districts? 
 building_type_by_district <- aggregate(training_set[, 11:11 ], list(training_set$district), )
+
+var_price_by_district <- aggregate(training_set[, 4:4 ], list(training_set$district), var)
+var_price_by_district <- data.frame(district_number = var_price_by_district$Group.1, var_price = round( var_price_by_district$x))
+p <- ggplot(data = var_price_by_district, aes(x = district_number, y = var_price)) 
+p + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=var_price), vjust=1.5, color="white", size=3.5) +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) +
+  ggtitle("Distribution of Var House Price Across Districts")
 
 
 # BASIC LINEAR MODELS
