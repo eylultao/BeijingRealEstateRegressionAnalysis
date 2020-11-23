@@ -115,7 +115,7 @@ pie(building_type_by_district)
 #district1=data_simple[data_simple$district==2,]
 #table2 <- table(district1$buildingType)
 # use the pie chart to show how building types are distributed within each district
-par(mfrow=c(4,4)) # 1 row and 3 columns for plots
+par(mfrow=c(4,4)) 
 pie( table(data_simple$buildingType[data_simple$district==1]), col=blues9, xlab="district 1",radius=1)
 pie( table(data_simple$buildingType[data_simple$district==2]), col=blues9, xlab="district 2",radius=1)
 pie( table(data_simple$buildingType[data_simple$district==3]), col=blues9, xlab="district 3",radius=1)
