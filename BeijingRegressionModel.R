@@ -154,3 +154,25 @@ summary(model_basic2)
 # - stepwise model selection 
 # - using anova in case stepwise is not accepted
 # - 1
+
+
+library(MASS)
+# Fit the full model 
+full.model <- lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+buildingType+constructionTime
+                 +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
+                   , data = training_set)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+#backward
+step.model.backward <- stepAIC(full.model, direction = "backward", 
+                      trace = FALSE)
+summary(step.model.backward)
+#forward
+null.model <-lm(totalPrice ~ ., data=data_simple)
+step.model.forward <- stepAIC(null.model, direction = "forward", 
+                               trace = FALSE)
+summary(step.model.forward)
+#colinearity detection
+car::vif(step.model.backward)
