@@ -175,4 +175,6 @@ step.model.forward <- stepAIC(null.model, direction = "forward",
                                trace = FALSE)
 summary(step.model.forward)
 #colinearity detection
-car::vif(step.model.backward)
+DAAG::vif(step.model)
+DAAG::vif(step.model.backward)
+DAAG::vif(step.model.forward)
