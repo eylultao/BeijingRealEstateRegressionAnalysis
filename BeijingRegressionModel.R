@@ -161,7 +161,8 @@ library(MASS)
 full.model <- lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+buildingType+constructionTime
                  +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
                    , data = training_set)
-# Stepwise regression model
+#Stepwise regression model
+#Both
 step.model <- stepAIC(full.model, direction = "both", 
                       trace = FALSE)
 summary(step.model)
@@ -170,7 +171,9 @@ step.model.backward <- stepAIC(full.model, direction = "backward",
                       trace = FALSE)
 summary(step.model.backward)
 #forward
-null.model <-lm(totalPrice ~ ., data=data_simple)
+null.model <-lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+buildingType+constructionTime
+                 +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
+                   , data = training_set)
 step.model.forward <- stepAIC(null.model, direction = "forward", 
                                trace = FALSE)
 summary(step.model.forward)
@@ -178,3 +181,4 @@ summary(step.model.forward)
 DAAG::vif(step.model)
 DAAG::vif(step.model.backward)
 DAAG::vif(step.model.forward)
+# Both and backward are the same, so backward is better than forward method.
