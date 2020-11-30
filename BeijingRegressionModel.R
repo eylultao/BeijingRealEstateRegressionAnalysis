@@ -28,7 +28,11 @@ data_simple$buildingType <- as.factor(data_simple$buildingType)
 data_simple$buildingStructure2 <- data_simple$buildingStructure
 data_simple$buildingStructure <- as.factor(data_simple$buildingStructure)
 data_simple$tradeTime <- as.Date(data_simple$tradeTime) # typeset tradeTime to Date Type
+data_simple$Year <- as.numeric(format(data_simple$tradeTime, format = "%Y" )) # new column with just the date
+group_year <- aggregate( data_simple[, 4:4 ], list(data_simple$Year), mean)
+
 data_simple$totalPriceLog <- log(data_simple$totalPrice* 10000)
+
 str(data_simple) # sanity check
 
 # CREATE training and testing data
@@ -324,3 +328,19 @@ pred.testing <- predict(model.interactions.log.poly.reduced, training_set, se.fi
 filter1_test <- training_set[pred.testing$fit[,2] < training_set$totalPriceLog,]
 filter2_test <- filter1[pred.testing$fit[,3] > filter1$totalPriceLog,]
 153633/ dim(training_set)[1] # predicted 80.1% correctly within the prediction interval
+
+
+
+####################################################################
+
+# final model attempt 3 (living room and elevator removed, YEAR INCLUDED )
+model.interactions.log.poly.reduced.year <- lm(totalPriceLog ~square+bedRoom+kitchen
+                                          +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1  +interaction4+interaction5 + Year , data = training_set)
+summary(model.interactions.log.poly.reduced.year)
+p <- plot(model.interactions.log.poly.reduced.year$fitted.values , model.interactions.log.poly.reduced.year$residuals, main= "res plot of reduced final model")
+# qq normal plot of residuals
+qqnorm(model.interactions.log.poly.reduced.year$residuals)
+# qq normal plot of standardized residuals
+standardized.residuals.year <- rstandard(model.interactions.log.poly.reduced.year)
+qqnorm(standardized.residuals.year, main ="standardize residuals qq plot")
+qqline(standardized.residuals.year)

@@ -140,3 +140,7 @@ corrplot(corrs_all2, type = "lower")
 # specify the x,y axis notation, and include what they they mean. 
 # eg: BuildingType (Categorical:  tower(1), bungalow(2), plate and tower(3), plate(4))
 
+
+data_simple$Year <- as.numeric(format(data_simple$tradeTime, format = "%Y" ))
+group_year <- aggregate( data_simple[, 4:4 ], list(data_simple$Year), mean)
+
