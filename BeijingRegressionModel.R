@@ -12,6 +12,14 @@ data_simple
 str(data_simple) # sanity check
 # remove NA values
 data_simple <- na.omit( data.frame(data_simple)) 
+
+
+# DATA CLEANING!!!!!
+# remove all houses less than 10 totalPrice
+data_simple <- data_simple[data_simple$totalPrice >10,]
+
+
+
 # some columns are char when they have to be integers (eg. livingRoom, drawingRoom, etc)
 # livingroom is actually the bedroom, and drawingroom is actually the living room
 data_simple$bedRoom <- as.numeric(data_simple$livingRoom)
@@ -238,13 +246,52 @@ model.regsubsets.interactions.d.s$cp
 model.regsubsets.interactions.d.s$adjr2
 
 # FOR NOW! This is the final model
-model.interactions <- lm(totalPrice ~square+livingRoom+bedRoom+kitchen
+model.interactions <- rlm(totalPrice ~square+livingRoom+bedRoom+kitchen
                          +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
 summary(model.interactions)
 
 DAAG::vif(model.interactions)
 # Values of VIF that exceed 10 are often regarded as indicating multicollinearity, but in weaker models values above 2.5 may be a cause for concern.
-(DAAG::vif(model.interactions) < 2.5)
+(DAAG::vif(model.interactions) < 10)
+
+# plots for residuals 
+p <- plot(model.interactions$fitted.values , model.interactions$residuals)
+# todo assess residuals
+# todo detech significant predictors
+
+# todo: test the predictions with testing data
+data_simple[data_simple$totalPrice == 4800.0,]
+
+# final model with log price
+model.interactions.log <- lm(totalPriceLog ~square+livingRoom+bedRoom+kitchen
+                          +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
+summary(model.interactions.log)
+
+p <- plot(model.interactions.log$fitted.values , model.interactions.log$residuals, main= "res plot of logtotalprice 2")
 
 
+# final model with log price and square footage as polynomial
+model.interactions.log.poly <- lm(totalPriceLog ~square+livingRoom+bedRoom+kitchen
+                             +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
+summary(model.interactions.log.poly)
+
+p <- plot(model.interactions.log.poly$fitted.values , model.interactions.log.poly$residuals, main= "res plot of logtotalprice polynomial squareft")
+
+
+# no district,buildingType, buidingStructure, just their interaction 
+model.regsubsets.log.poly <-  regsubsets(totalPriceLog ~square+livingRoom+bedRoom+kitchen
+                                         +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = training_set, method = "exhaustive", nvmax = 15)
+model.regsubsets.log.poly.s <- summary(model.regsubsets.log.poly)
+model.regsubsets.log.poly.s$which
+model.regsubsets.log.poly.s$cp
+model.regsubsets.log.poly.s$adjr2
+# living room and elevator is not included in the 2nd best model, best model has cp = 13.34070, adjr2 = 0.6566243
+
+
+# final model attempt 2 (living room and elevator removed )
+model.interactions.log.poly.reduced <- lm(totalPriceLog ~square+bedRoom+kitchen
+                                  +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
+summary(model.interactions.log.poly.reduced)
+
+p <- plot(model.interactions.log.poly.reduced$fitted.values , model.interactions.log.poly.reduced$residuals, main= "res plot of logtotalprice polynomial squareft, livingroom elevator removed")
 
