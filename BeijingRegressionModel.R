@@ -146,6 +146,7 @@ pie( table(data_simple$buildingType[data_simple$district==11]), col=blues9, xlab
 pie( table(data_simple$buildingType[data_simple$district==12]), col=blues9, xlab="district 12",radius=1)
 pie( table(data_simple$buildingType[data_simple$district==13]), col=blues9, xlab="district 13",radius=1)
 #plot correlation matrices(heatmap)
+par(mfrow=c(1,1))
 corrs_all2<-corrs_all[-c(1,2),-c(1,2)]
 #library(reshape2)
 #melted_corrs <- melt(corrs_all2)
@@ -292,6 +293,11 @@ model.regsubsets.log.poly.s$adjr2
 model.interactions.log.poly.reduced <- lm(totalPriceLog ~square+bedRoom+kitchen
                                   +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
 summary(model.interactions.log.poly.reduced)
-
-p <- plot(model.interactions.log.poly.reduced$fitted.values , model.interactions.log.poly.reduced$residuals, main= "res plot of logtotalprice polynomial squareft, livingroom elevator removed")
+p <- plot(model.interactions.log.poly.reduced$fitted.values , model.interactions.log.poly.reduced$residuals, main= "res plot of reduced final model")
+# qq normal plot of residuals
+qqnorm(model.interactions.log.poly.reduced$residuals)
+# qq normal plot of standardized residuals
+standardized.residuals <- rstandard(model.interactions.log.poly.reduced)
+qqnorm(standardized.residuals, main ="standardize residuals qq plot")
+qqline(standardized.residuals)
 
