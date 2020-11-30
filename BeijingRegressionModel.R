@@ -5,49 +5,37 @@ library("dplyr")
 
 # PART1: Data cleaning and general preparation
 # data source: https://www.kaggle.com/ruiqurm/lianjia
-#data <- read.csv("new.csv", header = TRUE, fileEncoding="latin1") # had to typeset encoding to eliminate type convert error
+# data <- read.csv("new.csv", header = TRUE, fileEncoding="latin1") # had to typeset encoding to eliminate type convert error
 # data simple has DOM removed from it, as the majority of DOM values are na, which reduces dataset size enormously( cuts N in half)
 data_simple <- read.csv("new copy.csv", header = TRUE, fileEncoding="latin1")# had to typeset encoding to eliminate type convert error 
-data_simple
 str(data_simple) # sanity check
-# remove NA values
-data_simple <- na.omit( data.frame(data_simple)) 
-
+data_simple <- na.omit( data.frame(data_simple)) # remove NA values
 
 # DATA CLEANING!!!!!
 # remove all houses less than 10 totalPrice
 data_simple <- data_simple[data_simple$totalPrice >10,]
-
-
-
 # some columns are char when they have to be integers (eg. livingRoom, drawingRoom, etc)
 # livingroom is actually the bedroom, and drawingroom is actually the living room
 data_simple$bedRoom <- as.numeric(data_simple$livingRoom)
 data_simple$livingRoom <- as.numeric(data_simple$drawingRoom)
 data_simple$bathRoom <- as.numeric(data_simple$bathRoom)
 data_simple$constructionTime <- as.numeric(data_simple$constructionTime)
-# typecast categorical variables as factors
+# typecast categorical variables as factors, but also keep the non factor versions for creating interaction terms
 data_simple$district2 <- data_simple$district # not a factor
 data_simple$district <- as.factor(data_simple$district)
-
 data_simple$buildingType2 <- data_simple$buildingType
 data_simple$buildingType <- as.factor(data_simple$buildingType)
-
-
 data_simple$buildingStructure2 <- data_simple$buildingStructure
 data_simple$buildingStructure <- as.factor(data_simple$buildingStructure)
-# typeset tradeTime to Date Type
-data_simple$tradeTime <- as.Date(data_simple$tradeTime)
+data_simple$tradeTime <- as.Date(data_simple$tradeTime) # typeset tradeTime to Date Type
 data_simple$totalPriceLog <- log(data_simple$totalPrice* 10000)
-str(data_simple)
+str(data_simple) # sanity check
 
 # CREATE training and testing data
 N <- length(data_simple$id)
 set.seed(2020)
 all_indices = seq(1, N)
-training_indices = sort(sample(1:N, 3*N/5, replace = FALSE))
-
-
+training_indices = sort(sample(1:N, 3*N/5, replace = FALSE)) # ratio is 60/40
 training_set = data_simple[training_indices,]
 testing_indices =  sort(all_indices[!all_indices %in% training_indices]) # remove training indices from set
 testing_set = data_simple[testing_indices,]
@@ -69,8 +57,9 @@ plot(training_set$totalPrice, training_set$communityAverage)
 # correlation matrices
 corrs_wrt_totalPrice <- cor(select_if(training_set, is.numeric), training_set$totalPrice) 
 corrs_all <- cor(select_if(training_set, is.numeric)) # correlation between all variables
+
 # DATA VISUALIZATION
-#construct side by side boxplots to visualize the totoal prices across different building types
+#construct side by side boxplots to visualize the total prices across different building types
 boxplot(totalPrice~buildingType,
         data=training_set,
         main="Different boxplots for building type",
@@ -91,34 +80,35 @@ boxplot(totalPrice~buildingStructure,
 
 library(ggplot2)
 library(data.table) #useful library for doing fast operations on large datasets
-# trying to understand the most expensive neighborhoods
-training_set
+
+
+# Mean housing price accross different districts -> understanding most expensive neighborhoods
 mean_price_by_district <- aggregate(training_set[, 4:4 ], list(training_set$district), mean)
-mean_price_by_district
 mean_price_by_district <- data.frame(district_number = mean_price_by_district$Group.1, mean_price = round( mean_price_by_district$x))
-p <- ggplot(data = mean_price_by_district, aes(x = district_number, y = mean_price)) 
-p + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=mean_price), vjust=1.5, color="white", size=3.5) +
+p_mean_by_district <- ggplot(data = mean_price_by_district, aes(x = district_number, y = mean_price)) 
+p_mean_by_district + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=mean_price), vjust=1.5, color="white", size=3.5) +
   theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) +
   ggtitle("Distribution of Mean House Price Across Districts")
-# trying to understand the variance of housing price of different districts
+
+# Variance of housing price accross different districts
 var_price_by_district <- aggregate(training_set[, 4:4 ], list(training_set$district), var)
-var_price_by_district
 var_price_by_district <- data.frame(district_number = var_price_by_district$Group.1, variance_price = round( var_price_by_district$x))
-p <- ggplot(data = var_price_by_district, aes(x = district_number, y = variance_price)) 
-p + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=variance_price), vjust=1.5, color="white", size=3.5) +
+p_var_by_district <- ggplot(data = var_price_by_district, aes(x = district_number, y = variance_price)) 
+p_var_by_district + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=variance_price), vjust=1.5, color="white", size=3.5) +
   theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) +
   ggtitle("Distribution of Variance of House Price Across Districts")
+
 # How is community score changing across districts
 mean_community_score_by_district <- aggregate(training_set[, 19:19 ], list(training_set$district), mean)
 mean_community_score_by_district <- data.frame(district_number = mean_community_score_by_district$Group.1, community_avg = round( mean_community_score_by_district$x))
-
-p2 <- ggplot(data = mean_community_score_by_district, aes(x = district_number, y = community_avg)) 
-p2 + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=community_avg), vjust=1.5, color="white", size=3.5) +
+p_score_by_district <- ggplot(data = mean_community_score_by_district, aes(x = district_number, y = community_avg)) 
+p_score_by_district + geom_bar(stat="identity", fill = "steelblue") + geom_text(aes(label=community_avg), vjust=1.5, color="white", size=3.5) +
   theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
   ggtitle("Distribution of Mean Community Score Across Districts")
-
-# the bar plot is very similar to the housing prices
+# the bar plot of community score per district is very similar to the mean housing prices per district
 # potential multicollinearity problem, will need to be adressed
+
+
 # TODO: find a better way to explore collinearity
 #We can explore collinearity once we have selected our model.
 # TODO : how are building types distributed across districts? 
@@ -301,3 +291,36 @@ standardized.residuals <- rstandard(model.interactions.log.poly.reduced)
 qqnorm(standardized.residuals, main ="standardize residuals qq plot")
 qqline(standardized.residuals)
 
+# todo: boxplot of residuals w.r.t interactions(categorical)
+
+# testing
+
+testing_set$interaction1 <- testing_set$communityAverage * testing_set$district2
+testing_set$interaction2 <- testing_set$square * testing_set$district2
+testing_set$interaction3 <- testing_set$square * testing_set$communityAverage
+testing_set$interaction4 <- testing_set$square * testing_set$buildingType2
+testing_set$interaction5 <- testing_set$buildingStructure2 * testing_set$buildingType2
+
+
+# cross validation
+# train on training_set, test on testing_set
+error1 <- sum((testing_set$totalPriceLog - predict(model.interactions.log.poly.reduced, testing_set))^2)
+rmse1 <- sqrt(sum((testing_set$totalPriceLog - predict(model.interactions.log.poly.reduced, testing_set))^2)/dim(testing_set)[1])
+
+pred <- predict(model.interactions.log.poly.reduced, testing_set, se.fit = TRUE, interval = "prediction")
+
+filter1 <- testing_set[pred$fit[,2] < testing_set$totalPriceLog,]
+filter2 <- filter1[pred$fit[,3] > filter1$totalPriceLog,]
+106123/ dim(testing_set)[1] # predicted 84% correctly within the prediction interval
+
+
+# train on the testing_set, test on the training_set (LOL!)
+model.interactions.log.poly.reduced.testing <- lm(totalPriceLog ~square+bedRoom+kitchen
+                                          +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = testing_set)
+error2 <- sum((training_set$totalPriceLog - predict(model.interactions.log.poly.reduced.testing, training_set))^2)
+rmse2 <- sqrt(sum((training_set$totalPriceLog - predict(model.interactions.log.poly.reduced.testing, training_set))^2)/dim(training_set)[1])
+pred.testing <- predict(model.interactions.log.poly.reduced, training_set, se.fit = TRUE, interval = "prediction")
+
+filter1_test <- training_set[pred.testing$fit[,2] < training_set$totalPriceLog,]
+filter2_test <- filter1[pred.testing$fit[,3] > filter1$totalPriceLog,]
+153633/ dim(training_set)[1] # predicted 80.1% correctly within the prediction interval
