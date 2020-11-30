@@ -1,4 +1,5 @@
 setwd("C:/Users/Kayson/Documents/GitHub/BeijingRealEstateRegressionAnalysis" )
+setwd("/Users/eylulaygun/Desktop/Year\ 5/STAT\ 306/Group\ project/BeijingRealEstateRegressionAnalysis" )
 getwd()
 library("dplyr")
 
@@ -6,7 +7,7 @@ library("dplyr")
 # data source: https://www.kaggle.com/ruiqurm/lianjia
 #data <- read.csv("new.csv", header = TRUE, fileEncoding="latin1") # had to typeset encoding to eliminate type convert error
 # data simple has DOM removed from it, as the majority of DOM values are na, which reduces dataset size enormously( cuts N in half)
-data_simple <- read.csv("new copy.csv", header = TRUE) #, fileEncoding="latin1"# had to typeset encoding to eliminate type convert error 
+data_simple <- read.csv("new copy.csv", header = TRUE, fileEncoding="latin1")# had to typeset encoding to eliminate type convert error 
 data_simple
 str(data_simple) # sanity check
 # remove NA values
@@ -18,8 +19,14 @@ data_simple$livingRoom <- as.numeric(data_simple$drawingRoom)
 data_simple$bathRoom <- as.numeric(data_simple$bathRoom)
 data_simple$constructionTime <- as.numeric(data_simple$constructionTime)
 # typecast categorical variables as factors
+data_simple$district2 <- data_simple$district # not a factor
 data_simple$district <- as.factor(data_simple$district)
+
+data_simple$buildingType2 <- data_simple$buildingType
 data_simple$buildingType <- as.factor(data_simple$buildingType)
+
+
+data_simple$buildingStructure2 <- data_simple$buildingStructure
 data_simple$buildingStructure <- as.factor(data_simple$buildingStructure)
 # typeset tradeTime to Date Type
 data_simple$tradeTime <- as.Date(data_simple$tradeTime)
@@ -161,15 +168,20 @@ library(MASS)
 full.model <- lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+buildingType+constructionTime
                  +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
                    , data = training_set)
+summary(full.model)
 #Stepwise regression model
 #Both
 step.model <- stepAIC(full.model, direction = "both", 
                       trace = FALSE)
-summary(step.model)
+# living room and elevator removed
+step.model$anova
+
+?stepAIC()
 #backward
 step.model.backward <- stepAIC(full.model, direction = "backward", 
                       trace = FALSE)
 summary(step.model.backward)
+step.model.backward$anova
 #forward
 null.model <-lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+buildingType+constructionTime
                  +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
@@ -177,8 +189,62 @@ null.model <-lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+build
 step.model.forward <- stepAIC(null.model, direction = "forward", 
                                trace = FALSE)
 summary(step.model.forward)
+step.model.forward$anova
 #colinearity detection
 DAAG::vif(step.model)
 DAAG::vif(step.model.backward)
 DAAG::vif(step.model.forward)
 # Both and backward are the same, so backward is better than forward method.
+
+# use regsubsets
+model.regsubsets <- regsubsets(totalPrice ~square+livingRoom+bedRoom+kitchen+bathRoom+buildingType+constructionTime
+                               +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage , data = training_set, method = "exhaustive", nvmax = 15)
+model.regsubsets.s <- summary(model.regsubsets)
+model.regsubsets.s$which
+model.regsubsets.s$cp
+model.regsubsets.s$adjr2
+
+# tried regsubsets on the log of total price, the results are worse than the totalPRice (lower adjr2 and higher cp)
+model.regsubsets.log <- regsubsets(totalPriceLog ~square+livingRoom+bedRoom+kitchen+bathRoom+buildingType+constructionTime
+                                   +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage , data = training_set, method = "exhaustive", nvmax = 15)
+model.regsubsets.log.s <- summary(model.regsubsets.log)
+model.regsubsets.log.s$which
+model.regsubsets.log.s$cp
+model.regsubsets.log.s$adjr2
+
+
+# interaction terms
+training_set$interaction1 <- training_set$communityAverage * training_set$district2
+training_set$interaction2 <- training_set$square * training_set$district2
+training_set$interaction3 <- training_set$square * training_set$communityAverage
+training_set$interaction4 <- training_set$square * training_set$buildingType2
+training_set$interaction5 <- training_set$buildingStructure2 * training_set$buildingType2
+ 
+# try regsubsets with interactions
+model.regsubsets.interactions <-  regsubsets(totalPrice ~square+livingRoom+bedRoom+kitchen+bathRoom+buildingType+constructionTime
+                                             +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage+interaction1 + interaction2  , data = training_set, method = "exhaustive", nvmax = 15)
+model.regsubsets.interactions.s <- summary(model.regsubsets.interactions)
+model.regsubsets.interactions.s$which
+model.regsubsets.interactions.s$cp
+model.regsubsets.interactions.s$adjr2
+
+
+# no district,buildingType, buidingStructure, just their interaction 
+model.regsubsets.interactions.d <-  regsubsets(totalPrice ~square+livingRoom+bedRoom+kitchen+bathRoom+constructionTime
+                                             +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4 +interaction5 , data = training_set, method = "exhaustive", nvmax = 15)
+model.regsubsets.interactions.d.s <- summary(model.regsubsets.interactions.d)
+model.regsubsets.interactions.d.s$which
+model.regsubsets.interactions.d.s$cp
+model.regsubsets.interactions.d.s$adjr2
+
+# FOR NOW! This is the final model
+model.interactions <- lm(totalPrice ~square+livingRoom+bedRoom+kitchen
+                         +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
+summary(model.interactions)
+
+DAAG::vif(model.interactions)
+# Values of VIF that exceed 10 are often regarded as indicating multicollinearity, but in weaker models values above 2.5 may be a cause for concern.
+(DAAG::vif(model.interactions) < 2.5)
+
+
+
