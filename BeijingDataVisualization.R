@@ -9,7 +9,7 @@ install.packages(lubridate)
 # PART1: Data cleaning and general preparation
 # data source: https://www.kaggle.com/ruiqurm/lianjia
 # data simple has DOM removed from it, as the majority of DOM values are na, which reduces dataset size enormously( cuts N in half)
-data_simple <- read.csv("new copy.csv", header = TRUE)#fileEncoding="latin1") # had to typeset encoding to eliminate type convert error 
+data_simple <- read.csv("new copy.csv", header = TRUE, fileEncoding="latin1") # had to typeset encoding to eliminate type convert error 
 data_simple <- subset( data_simple, select =-constructionTime )
 # data_simple <- read.csv("new copy.csv", header = TRUE) # comment out depending on the computer language  
 #library(lubridate)
@@ -36,7 +36,7 @@ data_simple <- data_simple[data_simple$totalPrice >10,] # remove all houses less
 data_simple$bedRoom <- as.numeric(data_simple$livingRoom)
 data_simple$livingRoom <- as.numeric(data_simple$drawingRoom)
 data_simple$bathRoom <- as.numeric(data_simple$bathRoom)
-data_simple$constructionTime <- as.numeric(data_simple$constructionTime)
+#data_simple$constructionTime <- as.numeric(data_simple$constructionTime)
 # typecast categorical variables as factors, but also keep the non factor versions for creating interaction terms
 data_simple$district2 <- data_simple$district # not a factor
 data_simple$district <- as.factor(data_simple$district)
@@ -45,8 +45,17 @@ data_simple$buildingType <- as.factor(data_simple$buildingType)
 data_simple$buildingStructure2 <- data_simple$buildingStructure
 data_simple$buildingStructure <- as.factor(data_simple$buildingStructure)
 data_simple$tradeTime <- as.Date(data_simple$tradeTime) # typeset tradeTime to Date Type
+data_simple$Year <- as.numeric(format(data_simple$tradeTime, format = "%Y" )) # new column with just the date
 data_simple$totalPriceLog <- log(data_simple$totalPrice* 10000)
 str(data_simple) # sanity check
+
+# remove all houses less than 10 totalPrice
+data_simple <- data_simple[data_simple$totalPrice >10,]
+# remove data before year 2010
+data_simple <- data_simple[data_simple$Year >2009,]
+table(data_simple$Year) # distribution of years in the data
+group_year <- aggregate( data_simple[, 4:4 ], list(data_simple$Year), mean) # get avg house price per year
+
 
 # Part 2: create training and testing data
 N <- length(data_simple$id)
@@ -62,7 +71,7 @@ cor(training_set$totalPrice, training_set$square*training_set$price)
 cor(training_set$totalPrice, training_set$price)
 # it wouldn't make sense to calculate pearson correlation between a categorical variable that looks like an "integer" with a continuous var such as totalPrice
 # But I was curious and made a plot to see how house prices differ across districts in Beijing
-plot(training_set$totalPrice, training_set$district,main="how house prices differ across districts in Beijing")
+plot(training_set$totalPrice, training_set$district,main="how house prices differ across districts in Beijing", ylab = "District number", xlab = "Total Price (in 10,000 Yuan)")
 # additional plots for other categorical variables
 plot(training_set$totalPrice, training_set$buildingType,main="how house prices differ across buildingtypes in Beijing")
 plot(training_set$totalPrice, training_set$buildingStructure,main="how house prices differ across buildingstructure in Beijing")
