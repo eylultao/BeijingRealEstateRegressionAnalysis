@@ -222,10 +222,9 @@ filter2_test <- filter1[pred.testing$fit[,3] > filter1$totalPriceLog,]
 
 
 ####################################################################
-
 # final model attempt 3 (living room and elevator removed, YEAR INCLUDED )
 model.interactions.log.poly.reduced.year <- lm(totalPriceLog ~square+bedRoom+kitchen
-                                          +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1  +interaction4+interaction5 + Year , data = training_set)
+                                               +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1  +interaction4+interaction5 + Year , data = training_set)
 summary(model.interactions.log.poly.reduced.year)
 p <- plot(model.interactions.log.poly.reduced.year$fitted.values , model.interactions.log.poly.reduced.year$residuals, main= "res plot of reduced final model")
 # qq normal plot of residuals
@@ -241,21 +240,16 @@ qqline(standardized.residuals.year)
 error1 <- sum((testing_set$totalPriceLog - predict(model.interactions.log.poly.reduced.year, testing_set))^2)
 rmse1 <- sqrt(sum((testing_set$totalPriceLog - predict(model.interactions.log.poly.reduced.year, testing_set))^2)/dim(testing_set)[1])
 pred <- predict(model.interactions.log.poly.reduced.year, testing_set, se.fit = TRUE, interval = "prediction")
-
-filter1 <- testing_set[pred$fit[,2] < testing_set$totalPriceLog,]
-filter2 <- filter1[pred$fit[,3] > filter1$totalPriceLog,]
-106123/ dim(testing_set)[1] # predicted 84% correctly within the prediction interval
-
+filter3 <- testing_set[pred$fit[,2] < testing_set$totalPriceLog & testing_set$totalPriceLog < pred$fit[,3],]
+dim(filter3)[1]/ dim(testing_set)[1] # 97.4% accuracy!!
 
 # train on the testing_set, test on the training_set (LOL!)
 model.interactions.log.poly.reduced.year.testing <- lm(totalPriceLog ~square+bedRoom+kitchen
-                                                  +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 +interaction4+interaction5 + Year , data = testing_set)
+                                                       +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 +interaction4+interaction5 + Year , data = testing_set)
+summary(model.interactions.log.poly.reduced.year.testing)
 error2 <- sum((training_set$totalPriceLog - predict(model.interactions.log.poly.reduced.year.testing, training_set))^2)
 rmse2 <- sqrt(sum((training_set$totalPriceLog - predict(model.interactions.log.poly.reduced.year.testing, training_set))^2)/dim(training_set)[1])
 pred.testing <- predict(model.interactions.log.poly.reduced.year.testing, training_set, se.fit = TRUE, interval = "prediction")
-
-filter1_test <- training_set[pred.testing$fit[,2] < training_set$totalPriceLog,]
-filter2_test <- filter1[pred.testing$fit[,3] > filter1$totalPriceLog,]
-153633/ dim(training_set)[1] # predicted 80.1% correctly within the prediction interval
-
+filter3_test <- training_set[pred.testing$fit[,2] < training_set$totalPriceLog & training_set$totalPriceLog < pred.testing$fit[,3],]
+dim(filter3_test)[1]/ dim(training_set)[1] # predicted 97.2% correctly within the prediction interval
 
