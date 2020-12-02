@@ -6,8 +6,6 @@ library(data.table) #useful library for doing fast operations on large datasets
 
 # PART1: Data cleaning and general preparation
 # data source: https://www.kaggle.com/ruiqurm/lianjia
-# data <- read.csv("new.csv", header = TRUE, fileEncoding="latin1") # had to typeset encoding to eliminate type convert error
-# data simple has DOM removed from it, as the majority of DOM values are na, which reduces dataset size enormously( cuts N in half)
 data_simple <- read.csv("new copy.csv", header = TRUE, fileEncoding="latin1")# had to typeset encoding to eliminate type convert error 
 str(data_simple) # sanity check
 data_simple <- na.omit( data.frame(data_simple)) # remove NA values
@@ -57,49 +55,38 @@ cor(training_set$totalPrice, training_set$price)
 corrs_wrt_totalPrice <- cor(select_if(training_set, is.numeric), training_set$totalPrice) 
 corrs_all <- cor(select_if(training_set, is.numeric)) # correlation between all variables
 
-# very basic models
-model_basic1 <- lm(totalPrice ~ square + district, data = training_set)
-summary(model_basic1)
-model_basic2 <- lm(totalPrice ~ square + district + bathRoom + drawingRoom + livingRoom + subway+ communityAverage, data = training_set)
-summary(model_basic2)
-
-
 library(MASS)
 # MODEL SELECTION 
 # Fit the full model 
 full.model <- lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+buildingType+constructionTime
                  +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
-                   , data = training_set)
+                 , data = training_set)
 summary(full.model)
 #Stepwise regression model
 step.model <- stepAIC(full.model, direction = "both", 
                       trace = FALSE)
 # living room and elevator removed, they are 
 step.model$anova
-
-?stepAIC()
 #backward
 step.model.backward <- stepAIC(full.model, direction = "backward", 
-                      trace = FALSE)
+                               trace = FALSE)
 summary(step.model.backward)
 step.model.backward$anova
 #forward
 null.model <-lm(totalPrice ~square+livingRoom+drawingRoom+kitchen+bathRoom+buildingType+constructionTime
-                 +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
-                   , data = training_set)
+                +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage
+                , data = training_set)
 step.model.forward <- stepAIC(null.model, direction = "forward", 
-                               trace = FALSE)
+                              trace = FALSE)
 summary(step.model.forward)
 step.model.forward$anova
 #colinearity detection
 DAAG::vif(step.model)
 DAAG::vif(step.model.backward)
 DAAG::vif(step.model.forward)
-# Both and backward are the same, so backward is better than forward method.
 
 # use regsubsets
 regsubsets()
-
 library(leaps)
 model.regsubsets <- regsubsets(totalPrice ~square+livingRoom+bedRoom+kitchen+bathRoom+buildingType+constructionTime
                                +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage , data = training_set, method = "exhaustive", nvmax = 15)
@@ -132,7 +119,7 @@ testing_set$interaction2 <- testing_set$square * testing_set$district2
 testing_set$interaction3 <- testing_set$square * testing_set$communityAverage
 testing_set$interaction4 <- testing_set$square * testing_set$buildingType2
 testing_set$interaction5 <- testing_set$buildingStructure2 * testing_set$buildingType2
- 
+
 # try regsubsets with interactions
 model.regsubsets.interactions <-  regsubsets(totalPrice ~square+livingRoom+bedRoom+kitchen+bathRoom+buildingType+constructionTime
                                              +renovationCondition+buildingStructure+elevator+fiveYearsProperty+subway+district+communityAverage+interaction1 + interaction2  , data = training_set, method = "exhaustive", nvmax = 15)
@@ -144,16 +131,17 @@ model.regsubsets.interactions.s$adjr2
 
 # no district,buildingType, buidingStructure, just their interaction 
 model.regsubsets.interactions.d <-  regsubsets(totalPrice ~square+livingRoom+bedRoom+kitchen+bathRoom+constructionTime
-                                             +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4 +interaction5 , 
-                                             data = training_set, method = "exhaustive", nvmax = 15)
+                                               +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4 +interaction5 , 
+                                               data = training_set, method = "exhaustive", nvmax = 15)
 model.regsubsets.interactions.d.s <- summary(model.regsubsets.interactions.d)
 model.regsubsets.interactions.d.s$which
 model.regsubsets.interactions.d.s$cp
 model.regsubsets.interactions.d.s$adjr2
 
-# FOR NOW! This is the final model
+
+# trying rlm function instead of lm
 model.interactions <- rlm(totalPrice ~square+livingRoom+bedRoom+kitchen
-                         +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
+                          +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
 summary(model.interactions)
 
 DAAG::vif(model.interactions)
@@ -165,24 +153,16 @@ p <- plot(model.interactions$fitted.values , model.interactions$residuals)
 
 # final model with log price
 model.interactions.log <- lm(totalPriceLog ~square+livingRoom+bedRoom+kitchen
-                          +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
+                             +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
 summary(model.interactions.log)
-
 p <- plot(model.interactions.log$fitted.values , model.interactions.log$residuals, main= "res plot of logtotalprice 2")
 
 
 # final model with log price and square footage as polynomial
 model.interactions.log.poly <- lm(totalPriceLog ~square+livingRoom+bedRoom+kitchen
-                             +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 +Year , data = training_set)
+                                  +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 +Year , data = training_set)
 summary(model.interactions.log.poly)
-model.regsubsets.attempt6 <- regsubsets(totalPriceLog ~square+livingRoom+bedRoom+kitchen
-                                        +renovationCondition+elevator+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 + Year ,data = training_set, method = "exhaustive", nvmax = 15 )
-model.regsubsets.attempt6.s <- summary(model.regsubsets.attempt6)
-model.regsubsets.attempt6.s$cp
-model.regsubsets.attempt6.s$adjr2
-
-p <- plot(model.interactions.log.poly$fitted.values , model.interactions.log.poly$residuals, main= "res plot of logtotalprice polynomial squareft")
-
+plot(model.interactions.log.poly$fitted.values , model.interactions.log.poly$residuals, main= "res plot of logtotalprice polynomial squareft")
 
 # no district,buildingType, buidingStructure, just their interaction 
 model.regsubsets.log.poly <-  regsubsets(totalPriceLog ~square+livingRoom+bedRoom+kitchen
@@ -193,10 +173,9 @@ model.regsubsets.log.poly.s$cp
 model.regsubsets.log.poly.s$adjr2
 # living room and elevator is not included in the 2nd best model, best model has cp = 13.34070, adjr2 = 0.6566243
 
-
 # final model attempt 2 (living room and elevator removed )
 model.interactions.log.poly.reduced <- lm(totalPriceLog ~square+bedRoom+kitchen
-                                  +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
+                                          +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = training_set)
 summary(model.interactions.log.poly.reduced)
 p <- plot(model.interactions.log.poly.reduced$fitted.values , model.interactions.log.poly.reduced$residuals, main= "res plot of reduced final model")
 # qq normal plot of residuals
@@ -206,35 +185,27 @@ standardized.residuals <- rstandard(model.interactions.log.poly.reduced)
 qqnorm(standardized.residuals, main ="standardize residuals qq plot")
 qqline(standardized.residuals)
 
-# todo: boxplot of residuals w.r.t interactions(categorical)
-
-
 # cross validation
 # train on training_set, test on testing_set
 error1 <- sum((testing_set$totalPriceLog - predict(model.interactions.log.poly.reduced, testing_set))^2)
 rmse1 <- sqrt(sum((testing_set$totalPriceLog - predict(model.interactions.log.poly.reduced, testing_set))^2)/dim(testing_set)[1])
-
 pred <- predict(model.interactions.log.poly.reduced, testing_set, se.fit = TRUE, interval = "prediction")
-
-filter1 <- testing_set[pred$fit[,2] < testing_set$totalPriceLog,]
-filter2 <- filter1[pred$fit[,3] > filter1$totalPriceLog,]
-106123/ dim(testing_set)[1] # predicted 84% correctly within the prediction interval
 
 
 # train on the testing_set, test on the training_set (LOL!)
 model.interactions.log.poly.reduced.testing <- lm(totalPriceLog ~square+bedRoom+kitchen
-                                          +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = testing_set)
+                                                  +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1 + interaction2 +interaction4+interaction5 , data = testing_set)
 error2 <- sum((training_set$totalPriceLog - predict(model.interactions.log.poly.reduced.testing, training_set))^2)
 rmse2 <- sqrt(sum((training_set$totalPriceLog - predict(model.interactions.log.poly.reduced.testing, training_set))^2)/dim(training_set)[1])
 pred.testing <- predict(model.interactions.log.poly.reduced, training_set, se.fit = TRUE, interval = "prediction")
 
-filter1_test <- training_set[pred.testing$fit[,2] < training_set$totalPriceLog,]
-filter2_test <- filter1[pred.testing$fit[,3] > filter1$totalPriceLog,]
-153633/ dim(training_set)[1] # predicted 80.1% correctly within the prediction interval
-
 
 ####################################################################
 # final model attempt 3 (living room and elevator removed, YEAR INCLUDED )
+# this is the very final model!! 
+training_set$rencond <- as.factor(training_set$renovationCondition)
+training_set$rencond <- relevel(training_set$rencond , ref =2)
+
 model.interactions.log.poly.reduced.year <- lm(totalPriceLog ~square+bedRoom+kitchen
                                                +renovationCondition+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1  +interaction4+interaction5 + Year , data = training_set)
 summary(model.interactions.log.poly.reduced.year)
@@ -264,27 +235,6 @@ rmse2 <- sqrt(sum((training_set$totalPriceLog - predict(model.interactions.log.p
 pred.testing <- predict(model.interactions.log.poly.reduced.year.testing, training_set, se.fit = TRUE, interval = "prediction" )
 filter3_test <- training_set[pred.testing$fit[,2] < training_set$totalPriceLog & training_set$totalPriceLog < pred.testing$fit[,3],]
 dim(filter3_test)[1]/ dim(training_set)[1] # predicted 97.2% correctly within the prediction interval
-
-pred.testing$fit[1,]
-exp(pred.testing$fit[1,])
-exp(16)- exp(15)
-
-?predict.lm()
 ######
-training_set$rencond <- as.factor(training_set$renovationCondition)
-training_set$rencond <- relevel(training_set$rencond , ref =2)
 
-finalmodel.rencon <- lm(totalPriceLog ~square+bedRoom+kitchen
-                                    +rencond+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1  
-                                    +interaction4+interaction5 + Year , data = training_set)
-plot(finalmodel.rencon$fitted.values, finalmodel.rencon$residuals, main = " residual plot for final model")
-
-summary(finalmodel.rencon)
-finalmodel.regsubsets <- regsubsets(totalPriceLog ~square+bedRoom+kitchen
-                                               +rencond+fiveYearsProperty+subway+communityAverage+ I(square^2)+interaction1  
-                                    +interaction4+interaction5 + Year , data = training_set, method = "exhaustive", nvmax = 15)
-finalmodel.regsubsets.s <- summary(finalmodel.regsubsets)
-finalmodel.regsubsets.s$which 
-finalmodel.regsubsets.s$cp
-finalmodel.regsubsets.s$adjr2
 
